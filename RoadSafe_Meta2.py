@@ -1,19 +1,4 @@
-﻿"""
-RoadSafe AI - Meta II: Otimizacao de Hiper-parametros com Inteligencia de Enxame
-Unidade Curricular: Inteligencia Computacional (26/27)
-
-Comparacao de 3 abordagens:
-  1. Modelo de Referencia (Baseline): CNN_B_cw da Meta I (ja treinado)
-  2. Particle Swarm Optimization (PSO) - Referencia obrigatoria do enunciado
-  3. Grey Wolf Optimizer (GWO) - Segundo algoritmo (SwarmPackagePy)
-
-Hiper-parametros otimizados no espaco de busca:
-  - Taxa de aprendizagem (learning rate): [1e-4, 5e-3] (em escala logaritmica)
-  - Taxa de dropout: [0.10, 0.50]
-  - Dimensoes da camada densa: [64, 256]
-"""
-
-import time
+﻿import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -54,16 +39,14 @@ BATCH = 32
 
 # Configuracao otimizada para execucao rapida no CPU (conforme recomendacao do enunciado)
 N_PARTICULAS = 4          # Populacao do enxame
-N_ITERACOES = 3           # Iteracoes por algoritmo (4 x 3 = 12 avaliacoes rapidas)
+N_ITERACOES = 3           # Iteracoes por algoritmo 
 EPOCAS_AVALIACAO = 2      # Epocas por avaliacao da funcao objetivo
-FRACAO_DADOS_OTIM = 0.20  # Subconjunto de ~850 imagens para busca rapida (~27 batches/epoca)
+FRACAO_DADOS_OTIM = 0.20  # Sub de 850 imagens para busca rapida
 
-# Treino final dos modelos vencedores (com EarlyStopping)
+#Treino
 EPOCAS_TREINO_FINAL = 25
 PACIENCIA = 6
 
-
-# ---------- Preparacao dos Dados ----------
 def listar_imagens(pasta):
     pasta = Path(pasta)
     classes = sorted(d.name for d in pasta.iterdir() if d.is_dir())
@@ -85,7 +68,7 @@ def carregar(caminho, rotulo):
 
 def criar_dataset(caminhos, rotulos, treino=False, fracao=1.0):
     if fracao < 1.0 and treino:
-        # Extrai subconjunto estratificado representativo para o enxame
+        # Extrai sub
         _, caminhos, _, rotulos = train_test_split(
             caminhos, rotulos, test_size=fracao, stratify=rotulos, random_state=SEED
         )
@@ -109,8 +92,6 @@ def preparar_splits(caminhos, rotulos):
     )
     return (x_tr, y_tr), (x_val, y_val), (x_te, y_te)
 
-
-# ---------- Arquitetura Parametrizada da CNN ----------
 def construir_cnn(n_classes, lr, dropout, neuronios_dense, nome="CNN_Otimizada"):
     m = keras.Sequential(name=nome)
     m.add(layers.Input(TAMANHO_IMG + (3,)))
@@ -136,12 +117,6 @@ def construir_cnn(n_classes, lr, dropout, neuronios_dense, nome="CNN_Otimizada")
     )
     return m
 
-
-# ---------- Decodificacao de Hiper-parametros ----------
-# Vetor x continuo:
-#   x[0] -> log10(lr), intervalo [-4.0, -2.3] => lr entre ~1e-4 e ~5e-3
-#   x[1] -> dropout,   intervalo [0.10, 0.50]
-#   x[2] -> neuronios, intervalo [64, 256]
 LIMITES_INFERIORES = [-4.0, 0.10, 64.0]
 LIMITES_SUPERIORES = [-2.3, 0.50, 256.0]
 
@@ -152,8 +127,6 @@ def decodificar_hiperparametros(x):
     neuronios = int(round(x[2]))
     return lr, dropout, neuronios
 
-
-# ---------- Funcao Objetivo do Enxame ----------
 class FuncaoObjetivoEnxame:
     def __init__(self, n_classes, ds_tr_rapido, ds_val, pesos_classe, nome_algoritmo="Enxame"):
         self.n_classes = n_classes
@@ -201,8 +174,6 @@ class FuncaoObjetivoEnxame:
         )
         return val_loss
 
-
-# ---------- Avaliacao no Conjunto de Teste ----------
 def avaliar_modelo(modelo, ds_teste, y_true, classes):
     probs = modelo.predict(ds_teste, verbose=0)
     probs = probs / probs.sum(axis=1, keepdims=True)
@@ -287,8 +258,6 @@ def guardar_grafico_convergencia(historico_pso, historico_gwo, pasta_convergenci
     plt.savefig(pasta_convergencia / "Convergencia_PSO_vs_GWO.png", dpi=150)
     plt.close()
 
-
-# ---------- Execucao Principal ----------
 def main():
     for pasta in [PASTA_SAIDA, PASTA_CURVAS, PASTA_MATRIZES, PASTA_RELATORIOS, PASTA_MODELOS, PASTA_CONVERGENCIA]:
         pasta.mkdir(parents=True, exist_ok=True)
@@ -312,9 +281,6 @@ def main():
 
     resultados_comparativos = []
 
-    # ==========================================================
-    # 1. MODELO DE REFERENCIA (CNN_B_cw da Meta I)
-    # ==========================================================
     print("\n" + "=" * 60)
     print(" 1. CARREGAMENTO E AVALIACAO DO MODELO DE REFERENCIA (META I)")
     print("=" * 60)
@@ -355,9 +321,7 @@ def main():
         }
     )
 
-    # ==========================================================
-    # 2. OTIMIZACAO COM PARTICLE SWARM OPTIMIZATION (PSO)
-    # ==========================================================
+    # Particle Swarm
     print("\n" + "=" * 60)
     print(f" 2. OTIMIZACAO COM PSO ({N_PARTICULAS} particulas, {N_ITERACOES} iteracoes)")
     print("=" * 60)
@@ -378,7 +342,7 @@ def main():
     melhor_lr_pso, melhor_dp_pso, melhor_neu_pso = decodificar_hiperparametros(melhor_x_pso)
     print(f"\n[PSO Concluido] Melhor solucao: lr={melhor_lr_pso:.6f}, dropout={melhor_dp_pso:.2f}, dense={melhor_neu_pso} (demorou {tempo_otim_pso/60:.1f} min)")
 
-    # Treino final do modelo otimizado pelo PSO
+    # Treino PSO
     print("\n[PSO] A treinar modelo final com hiper-parametros otimizados...")
     t_treino_pso = time.time()
     tf.keras.backend.clear_session()
@@ -411,9 +375,7 @@ def main():
         }
     )
 
-    # ==========================================================
-    # 3. OTIMIZACAO COM GREY WOLF OPTIMIZER (GWO)
-    # ==========================================================
+    # Grey Wolf
     print("\n" + "=" * 60)
     print(f" 3. OTIMIZACAO COM GWO ({N_PARTICULAS} lobos, {N_ITERACOES} iteracoes)")
     print("=" * 60)
@@ -434,7 +396,7 @@ def main():
     melhor_lr_gwo, melhor_dp_gwo, melhor_neu_gwo = decodificar_hiperparametros(melhor_x_gwo)
     print(f"\n[GWO Concluido] Melhor solucao: lr={melhor_lr_gwo:.6f}, dropout={melhor_dp_gwo:.2f}, dense={melhor_neu_gwo} (demorou {tempo_otim_gwo/60:.1f} min)")
 
-    # Treino final do modelo otimizado pelo GWO
+    # Treino Grey
     print("\n[GWO] A treinar modelo final com hiper-parametros otimizados...")
     t_treino_gwo = time.time()
     tf.keras.backend.clear_session()
@@ -467,9 +429,7 @@ def main():
         }
     )
 
-    # ==========================================================
-    # 4. GUARDAR RESULTADOS COMPARATIVOS E GRAFICOS DE ENXAME
-    # ==========================================================
+    # Results
     guardar_grafico_convergencia(func_pso.historico_avaliacoes, func_gwo.historico_avaliacoes, PASTA_CONVERGENCIA)
 
     df_res = pd.DataFrame(resultados_comparativos).round(4)
@@ -487,7 +447,7 @@ def main():
     print("=" * 60)
     print(df_res.to_string(index=False))
 
-    # Relatorios textuais de classificacao
+    # Relatorios 
     for nome_m, pred_m in [("Referencia", pred_base), ("PSO", pred_pso), ("GWO", pred_gwo)]:
         rep = classification_report(y_te, pred_m, target_names=classes, digits=3, zero_division=0)
         (PASTA_RELATORIOS / f"Relatorio_Classificacao_{nome_m}.txt").write_text(rep, encoding="utf-8")

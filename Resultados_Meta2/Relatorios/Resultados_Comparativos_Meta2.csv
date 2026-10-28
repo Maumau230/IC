@@ -1,0 +1,4 @@
+modelo,algoritmo,lr,dropout,neuronios_dense,tempo_treino_seg,tempo_otimizacao_seg,accuracy,precision_macro,recall_macro,especificidade_macro,f1_macro,auc_macro_ovr
+CNN_Referencia (Meta I),Nenhum (Baseline),0.0005,0.4,128,0.0,0.0,0.7121,0.5591,0.5624,0.922,0.5016,0.8757
+CNN_Otimizada_PSO,PSO,0.0021,0.1,252,1602.1,1308.4,0.4417,0.3975,0.3829,0.8613,0.3258,0.8073
+CNN_Otimizada_GWO,GWO,0.0004,0.259,195,1224.0,1536.3,0.5344,0.5835,0.4926,0.8866,0.4654,0.8538

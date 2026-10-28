@@ -1,0 +1,4 @@
+modelo,class_weight,parametros,epocas,accuracy,recall_macro,especificidade_macro,f1_macro,auc_macro_ovr,recall_Broken Road Sign Issues,recall_Damaged Road Issues,recall_Illegal Parking Issues,recall_Mixed Issues,recall_Pothole Issues
+MLP_B_cw,True,25331205,10,0.4591,0.2025,0.8005,0.1601,0.5588,0.0,0.2178,0.0,0.0,0.7948
+CNN_A_cw,True,110405,21,0.7045,0.5381,0.9191,0.4716,0.8416,0.7249,0.4158,0.625,0.1379,0.7869
+CNN_B_cw,True,423877,13,0.7121,0.5624,0.922,0.5016,0.8757,0.7472,0.3861,0.75,0.1379,0.7908

@@ -1,0 +1,11 @@
+                         precision    recall  f1-score   support
+
+Broken Road Sign Issues      0.000     0.000     0.000       269
+    Damaged Road Issues      0.116     0.218     0.152       101
+ Illegal Parking Issues      0.000     0.000     0.000        16
+           Mixed Issues      0.000     0.000     0.000        29
+         Pothole Issues      0.548     0.795     0.649       502
+
+               accuracy                          0.459       917
+              macro avg      0.133     0.203     0.160       917
+           weighted avg      0.313     0.459     0.372       917
