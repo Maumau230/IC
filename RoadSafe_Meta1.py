@@ -15,14 +15,13 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
-from tensorflow import keras
-from tensorflow import layers
+import keras
+from keras import layers
 
-# ---------- Configuracoes ----------
 PASTA_DADOS = "Road Issues"
 PASTA_SAIDA = Path("Resultados")
 
-# Subpastas organizadas
+#subpastas
 PASTA_CURVAS = PASTA_SAIDA / "Curvas"
 PASTA_MATRIZES = PASTA_SAIDA / "Matrizes"
 PASTA_RELATORIOS = PASTA_SAIDA / "Relatorios"
@@ -35,11 +34,9 @@ EPOCAS = 40
 PACIENCIA = 8
 POTENCIA_PESOS = 1.0
 
-# Modelos a treinar nesta execucao
+#modelos
 A_CORRER = ["MLP_B_cw", "CNN_A_cw", "CNN_B_cw"]
 
-
-# ---------- Preparacao dos Dados ----------
 def listar_imagens(pasta):
     pasta = Path(pasta)
     classes = sorted(d.name for d in pasta.iterdir() if d.is_dir())
@@ -62,7 +59,6 @@ def carregar(caminho, rotulo):
 def criar_dataset(caminhos, rotulos, treino=False):
     ds = tf.data.Dataset.from_tensor_slices((caminhos, rotulos))
     if treino:
-        # Shuffle a cada epoca durante o treino
         ds = ds.shuffle(
             buffer_size=len(caminhos), seed=SEED, reshuffle_each_iteration=True
         )
@@ -83,8 +79,6 @@ def preparar_splits(caminhos, rotulos):
     )
     return (x_tr, y_tr), (x_val, y_val), (x_te, y_te)
 
-
-# ---------- Modelos ----------
 def compilar(modelo, lr):
     modelo.compile(
         optimizer=keras.optimizers.Adam(lr),
@@ -128,7 +122,7 @@ def criar_cnn(n_classes, filtros, dropout, lr, nome, augment=True, batchnorm=Fal
 
 def obter_modelos(n_classes):
     return {
-        # Ronda 1 (sem pesos)
+        #Ronda 1 (sem pesos)
         "MLP_A": (lambda: criar_mlp(n_classes, [256, 128], 0.3, 1e-3, "MLP_A"), False),
         "MLP_B": (lambda: criar_mlp(n_classes, [512, 256, 128], 0.4, 5e-4, "MLP_B"), False),
         "CNN_A": (lambda: criar_cnn(n_classes, [32, 64, 128], 0.4, 1e-3, "CNN_A"), False),
@@ -136,7 +130,7 @@ def obter_modelos(n_classes):
             lambda: criar_cnn(n_classes, [32, 64, 128, 256], 0.4, 5e-4, "CNN_B", batchnorm=True),
             False,
         ),
-        # Ronda 2 (com pesos de classe)
+        #Ronda 2 (com pesos de classe)
         "MLP_B_cw": (lambda: criar_mlp(n_classes, [512, 256, 128], 0.4, 5e-4, "MLP_B_cw"), True),
         "CNN_A_cw": (lambda: criar_cnn(n_classes, [32, 64, 128], 0.4, 1e-3, "CNN_A_cw"), True),
         "CNN_B_cw": (
@@ -145,15 +139,13 @@ def obter_modelos(n_classes):
         ),
     }
 
-
-# ---------- Avaliacao e Visualizacoes ----------
 def avaliar(modelo, ds_teste, y_true, classes):
     probs = modelo.predict(ds_teste, verbose=0)
     probs = probs / probs.sum(axis=1, keepdims=True)
     previsto = probs.argmax(axis=1)
     cm = confusion_matrix(y_true, previsto)
 
-    # Especificidade One-vs-Rest para cada classe
+    #one vs rest
     n_classes = len(classes)
     especificidades = []
     for i in range(n_classes):
@@ -216,8 +208,6 @@ def guardar_matrizes(nome, y_true, previsto, classes, pasta_matrizes):
         plt.savefig(pasta_matrizes / f"Matriz_Confusao_{nome}{sufixo}.png", dpi=150)
         plt.close()
 
-
-# ---------- Usar o modelo numa nova fotografia ----------
 def prever_imagem(modelo_ou_caminho, caminho_imagem, classes):
     """Devolve a classe prevista e a confianca para uma fotografia."""
     if isinstance(modelo_ou_caminho, (str, Path)):
@@ -230,10 +220,8 @@ def prever_imagem(modelo_ou_caminho, caminho_imagem, classes):
     i = int(np.argmax(probs))
     return classes[i], float(probs[i])
 
-
-# ---------- Execucao Principal ----------
 def main():
-    # Cria todas as pastas de saida se nao existirem
+    #Cria todas as pastas de saida se nao existirem
     for pasta in [PASTA_SAIDA, PASTA_CURVAS, PASTA_MATRIZES, PASTA_RELATORIOS, PASTA_MODELOS]:
         pasta.mkdir(parents=True, exist_ok=True)
 
@@ -282,7 +270,7 @@ def main():
             validation_data=ds_val,
             epochs=EPOCAS,
             class_weight=pesos_classe if com_pesos else None,
-            shuffle=False,  # O shuffle ja e gerido pelo tf.data.Dataset
+            shuffle=False,  #shuffle ja e gerido pelo tf.data.Dataset
             callbacks=[
                 keras.callbacks.EarlyStopping(
                     monitor="val_loss", patience=PACIENCIA, restore_best_weights=True
@@ -314,7 +302,7 @@ def main():
             }
         )
 
-        # Atualiza a tabela a cada modelo para nao perder dados se for interrompido
+        #nao perder dados se for interrompido
         pd.DataFrame(resultados).round(4).to_csv(
             PASTA_RELATORIOS / "Resultados_Ronda2.csv", index=False
         )
